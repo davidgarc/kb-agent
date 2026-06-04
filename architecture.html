@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Application Troubleshooting Knowledge Agent Architecture</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23171715'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%2316875d'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        --paper: #f4f0e7;
+        --paper-deep: #e4ddcf;
+        --ink: #171715;
+        --muted: #514b42;
+        --line: #24231f;
+        --blue: #1f6feb;
+        --green: #16875d;
+        --red: #c2412d;
+        --gold: #b47a0b;
+        --violet: #7252b8;
+        --aqua: #128198;
+        --white: #fffaf0;
+        --shadow: 0 18px 45px rgba(23, 23, 21, 0.14);
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background:
+          radial-gradient(circle at 18% 8%, rgba(31, 111, 235, 0.12), transparent 28rem),
+          radial-gradient(circle at 88% 14%, rgba(196, 65, 45, 0.1), transparent 25rem),
+          linear-gradient(135deg, rgba(23, 23, 21, 0.04) 25%, transparent 25%) 0 0 / 18px 18px,
+          var(--paper);
+        color: var(--ink);
+        font-family:
+          "Avenir Next",
+          "Gill Sans",
+          "Trebuchet MS",
+          sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+      }
+
+      .page {
+        width: min(1500px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 30px 0 42px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.62fr);
+        gap: 24px;
+        align-items: end;
+        margin-bottom: 20px;
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: 2px solid var(--line);
+        border-radius: 999px;
+        background: var(--white);
+        padding: 8px 13px;
+        box-shadow: 5px 5px 0 var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .signal-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--green);
+        border: 2px solid var(--line);
+      }
+
+      h1 {
+        margin: 18px 0 10px;
+        max-width: 940px;
+        font-family:
+          Georgia,
+          "Times New Roman",
+          serif;
+        font-size: clamp(42px, 6vw, 86px);
+        line-height: 0.92;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        max-width: 850px;
+        color: #39362f;
+        font-size: clamp(17px, 1.55vw, 23px);
+        line-height: 1.35;
+        margin: 0;
+      }
+
+      .executive-note {
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: #fdf7e9;
+        box-shadow: var(--shadow);
+        padding: 18px;
+        position: relative;
+      }
+
+      .executive-note::before {
+        content: "";
+        position: absolute;
+        inset: 8px auto auto -10px;
+        width: 18px;
+        height: calc(100% - 16px);
+        background: var(--red);
+        border: 2px solid var(--line);
+      }
+
+      .executive-note h2,
+      .panel-title,
+      .zone-title,
+      .card-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .executive-note p {
+        margin: 10px 0 0;
+        color: #403c34;
+        font-size: 17px;
+        line-height: 1.35;
+      }
+
+      .stage {
+        border: 3px solid var(--line);
+        border-radius: 12px;
+        background:
+          linear-gradient(90deg, rgba(23, 23, 21, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
+          linear-gradient(rgba(23, 23, 21, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
+          rgba(255, 250, 240, 0.82);
+        box-shadow: 8px 8px 0 var(--line);
+        padding: 18px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stage::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, transparent, rgba(255, 250, 240, 0.5), transparent),
+          radial-gradient(circle at 48% 44%, transparent 0 23rem, rgba(23, 23, 21, 0.05) 23.1rem);
+        mix-blend-mode: multiply;
+      }
+
+      .diagram {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 16px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .source-lane {
+        grid-column: span 3;
+      }
+
+      .ingestion-lane {
+        grid-column: span 3;
+      }
+
+      .lane {
+        min-height: 100%;
+        border: 2px dashed rgba(23, 23, 21, 0.24);
+        border-radius: 10px;
+        padding: 12px;
+        background: rgba(255, 250, 240, 0.62);
+      }
+
+      .lane h3 {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 12px;
+        font-size: 13px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .lane h3 span {
+        display: inline-flex;
+        width: 28px;
+        height: 28px;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--line);
+        border-radius: 50%;
+        background: var(--white);
+        font-size: 14px;
+        box-shadow: 3px 3px 0 var(--line);
+      }
+
+      .source-stack,
+      .tool-grid,
+      .mini-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .node {
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--white);
+        box-shadow: 5px 5px 0 rgba(23, 23, 21, 0.92);
+        padding: 13px;
+        position: relative;
+      }
+
+      .node strong {
+        display: block;
+        font-size: 18px;
+        line-height: 1.05;
+      }
+
+      .node small {
+        display: block;
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.32;
+      }
+
+      .node .tag {
+        display: inline-flex;
+        margin-bottom: 8px;
+        border: 2px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 3px 8px 2px;
+        color: var(--ink);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .source-incidents {
+        border-left: 10px solid var(--red);
+      }
+
+      .source-docs {
+        border-left: 10px solid var(--blue);
+      }
+
+      .source-manifest {
+        border-left: 10px solid var(--gold);
+      }
+
+      .pipeline {
+        display: grid;
+        gap: 10px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: #f9f0dd;
+        padding: 10px;
+        box-shadow: 4px 4px 0 rgba(23, 23, 21, 0.78);
+      }
+
+      .step-num {
+        width: 34px;
+        height: 34px;
+        border: 2px solid var(--line);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--ink);
+        color: var(--white);
+        font-weight: 900;
+      }
+
+      .step b {
+        display: block;
+        font-size: 16px;
+      }
+
+      .step span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.32;
+      }
+
+      .core {
+        grid-column: span 6;
+        display: grid;
+        gap: 14px;
+      }
+
+      .neo {
+        border: 3px solid var(--line);
+        border-radius: 10px;
+        background: #10251e;
+        color: #f8fff6;
+        box-shadow: 8px 8px 0 var(--line);
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .neo::before {
+        content: "";
+        position: absolute;
+        inset: -120px -80px auto auto;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: rgba(22, 135, 93, 0.26);
+      }
+
+      .neo h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        position: relative;
+      }
+
+      .graph-map {
+        display: grid;
+        grid-template-columns: minmax(170px, 0.55fr) minmax(0, 1fr);
+        gap: 14px;
+        align-items: stretch;
+        position: relative;
+      }
+
+      .graph-hub {
+        border: 2px solid #f8fff6;
+        border-radius: 10px;
+        background:
+          linear-gradient(135deg, rgba(22, 135, 93, 0.95), rgba(17, 85, 63, 0.95)),
+          var(--green);
+        box-shadow: 5px 5px 0 rgba(248, 255, 246, 0.18);
+        padding: 16px;
+        min-height: 286px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+      }
+
+      .graph-hub::after {
+        content: "";
+        position: absolute;
+        right: -16px;
+        top: 50%;
+        width: 28px;
+        height: 2px;
+        background: rgba(248, 255, 246, 0.8);
+      }
+
+      .graph-hub span {
+        color: rgba(248, 255, 246, 0.72);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .graph-hub strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 42px;
+        line-height: 0.95;
+      }
+
+      .graph-hub small {
+        display: block;
+        margin-top: 14px;
+        color: rgba(248, 255, 246, 0.82);
+        font-size: 14px;
+        line-height: 1.35;
+      }
+
+      .relationship-list {
+        display: grid;
+        gap: 9px;
+      }
+
+      .graph-row {
+        display: grid;
+        grid-template-columns: minmax(118px, 0.46fr) minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        border: 2px solid rgba(248, 255, 246, 0.92);
+        border-radius: 8px;
+        background: rgba(248, 255, 246, 0.08);
+        padding: 10px;
+        min-height: 58px;
+      }
+
+      .edge-label {
+        display: inline-flex;
+        justify-content: center;
+        border: 1px solid rgba(248, 255, 246, 0.65);
+        border-radius: 999px;
+        color: rgba(248, 255, 246, 0.78);
+        padding: 5px 7px 4px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .graph-row b {
+        display: block;
+        font-size: 17px;
+        line-height: 1.05;
+      }
+
+      .graph-row small {
+        display: block;
+        color: rgba(248, 255, 246, 0.75);
+        font-size: 13px;
+        line-height: 1.26;
+        margin-top: 4px;
+      }
+
+      .row-components {
+        border-left: 10px solid #6bbf9c;
+      }
+
+      .row-resources {
+        border-left: 10px solid var(--gold);
+      }
+
+      .row-incidents {
+        border-left: 10px solid var(--red);
+      }
+
+      .row-docs {
+        border-left: 10px solid var(--blue);
+      }
+
+      .row-dependencies {
+        border-left: 10px solid var(--violet);
+      }
+
+      .vector-callout {
+        margin-top: 12px;
+        border: 2px solid rgba(248, 255, 246, 0.88);
+        border-radius: 8px;
+        background: rgba(248, 255, 246, 0.1);
+        padding: 10px 12px;
+        color: rgba(248, 255, 246, 0.88);
+        font-size: 14px;
+        line-height: 1.32;
+        position: relative;
+      }
+
+      .retrieval-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .retrieval-card {
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff7e2;
+        box-shadow: 4px 4px 0 var(--line);
+        padding: 11px;
+      }
+
+      .retrieval-card b {
+        display: block;
+        font-size: 15px;
+      }
+
+      .retrieval-card span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.32;
+      }
+
+      .runtime {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: minmax(340px, 0.74fr) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .runtime > h3 {
+        grid-column: 1 / -1;
+      }
+
+      .agent-card {
+        border: 3px solid var(--line);
+        border-radius: 10px;
+        background: #fffaf0;
+        box-shadow: 8px 8px 0 var(--line);
+        padding: 15px;
+      }
+
+      .agent-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .agent-header .chip {
+        border: 2px solid var(--line);
+        border-radius: 999px;
+        background: var(--blue);
+        color: #fff;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .tool-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .tool {
+        min-height: 84px;
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: #f5efe1;
+        padding: 10px;
+      }
+
+      .tool b {
+        display: block;
+        font-size: 14px;
+        line-height: 1.1;
+      }
+
+      .tool span {
+        display: block;
+        color: var(--muted);
+        margin-top: 5px;
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .chat-shell {
+        border: 3px solid var(--line);
+        border-radius: 10px;
+        background: #1b1a17;
+        color: var(--white);
+        box-shadow: 8px 8px 0 var(--line);
+        padding: 14px;
+      }
+
+      .chat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid rgba(255, 250, 240, 0.22);
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+      }
+
+      .chat-top b {
+        font-size: 18px;
+      }
+
+      .status-pill {
+        border: 1px solid rgba(255, 250, 240, 0.5);
+        border-radius: 999px;
+        padding: 4px 8px;
+        color: #c9f3dc;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .message {
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 8px;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .user-msg {
+        background: #2c2a24;
+      }
+
+      .agent-msg {
+        background: #f7efd9;
+        color: var(--ink);
+        border: 2px solid var(--white);
+      }
+
+      .evidence {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .evidence div {
+        border-left: 5px solid var(--green);
+        background: rgba(255, 250, 240, 0.1);
+        padding: 7px 9px;
+        color: #efe7d4;
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .governance {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 2px;
+      }
+
+      .guardrail {
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: #fffaf0;
+        box-shadow: 4px 4px 0 rgba(23, 23, 21, 0.85);
+        padding: 12px;
+      }
+
+      .guardrail b {
+        display: block;
+        font-size: 15px;
+      }
+
+      .guardrail span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.25;
+      }
+
+      .flow-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .flow-label::before,
+      .flow-label::after {
+        content: "";
+        height: 2px;
+        flex: 1;
+        background: var(--line);
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.76);
+        padding: 8px;
+        min-width: 0;
+      }
+
+      .swatch {
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--line);
+        border-radius: 50%;
+        flex: 0 0 auto;
+      }
+
+      .legend-item span {
+        font-size: 12px;
+        font-weight: 900;
+        min-width: 0;
+      }
+
+      .demo-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      .panel {
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        background: rgba(255, 250, 240, 0.84);
+        box-shadow: 6px 6px 0 var(--line);
+        padding: 16px;
+      }
+
+      .panel p,
+      .panel li {
+        color: #403c34;
+        font-size: 15px;
+        line-height: 1.36;
+      }
+
+      .panel ol {
+        margin: 12px 0 0;
+        padding-left: 22px;
+      }
+
+      .panel li + li {
+        margin-top: 8px;
+      }
+
+      .questions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .question {
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: #f7efd9;
+        padding: 12px;
+        min-height: 72px;
+        font-size: 15px;
+        line-height: 1.25;
+      }
+
+      @media (max-width: 1180px) {
+        .hero,
+        .demo-panel {
+          grid-template-columns: 1fr;
+        }
+
+        .diagram {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .source-lane,
+        .ingestion-lane,
+        .core,
+        .runtime,
+        .governance {
+          grid-column: auto;
+        }
+
+        .runtime {
+          grid-template-columns: 1fr;
+        }
+
+        .governance,
+        .legend {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 740px) {
+        .page {
+          width: min(100vw - 20px, 1500px);
+          padding-top: 18px;
+        }
+
+        .stage {
+          padding: 10px;
+          box-shadow: 5px 5px 0 var(--line);
+        }
+
+        .diagram,
+        .governance,
+        .legend,
+        .questions,
+        .retrieval-strip,
+        .tool-grid,
+        .graph-map {
+          grid-template-columns: 1fr;
+        }
+
+        .graph-hub {
+          min-height: auto;
+        }
+
+        .graph-hub::after {
+          display: none;
+        }
+
+        .graph-row {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+
+        .edge-label {
+          justify-content: flex-start;
+          width: fit-content;
+        }
+
+        .executive-note::before {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <div class="kicker"><span class="signal-dot"></span> Local POC architecture</div>
+          <h1 id="page-title">Application Troubleshooting Knowledge Agent</h1>
+          <p class="subtitle">
+            A chat-driven operations assistant that correlates incident history, architecture knowledge, and deployed infrastructure by app ID.
+          </p>
+        </div>
+        <aside class="executive-note">
+          <h2>Showcase Message</h2>
+          <p>
+            The agent does not guess from one document. It gathers evidence across operational records, architecture intent, and deployed reality, then returns likely causes and next checks with source-backed reasoning.
+          </p>
+        </aside>
+      </section>
+
+      <section class="stage" aria-label="Architecture diagram">
+        <div class="diagram">
+          <section class="lane source-lane">
+            <h3>Source Systems <span>1</span></h3>
+            <div class="source-stack">
+              <article class="node source-incidents">
+                <span class="tag">Table dump</span>
+                <strong>ServiceNow Incidents</strong>
+                <small>Priority, symptoms, assignment group, CI, resolution notes, recurrence patterns.</small>
+              </article>
+              <article class="node source-docs">
+                <span class="tag">Markdown</span>
+                <strong>DeepWiki Architecture</strong>
+                <small>Application design, components, dependencies, known failure modes, runbook sections.</small>
+              </article>
+              <article class="node source-manifest">
+                <span class="tag">JSON</span>
+                <strong>Infrastructure Manifests</strong>
+                <small>Deployments, namespaces, endpoints, queues, databases, environment bindings.</small>
+              </article>
+            </div>
+            <div class="flow-label">Normalize</div>
+          </section>
+
+          <section class="lane ingestion-lane">
+            <h3>FastAPI Ingestion <span>2</span></h3>
+            <div class="pipeline">
+              <div class="step">
+                <span class="step-num">A</span>
+                <div><b>Parse source files</b><span>CSV/JSON incidents, Markdown sections, manifest resources.</span></div>
+              </div>
+              <div class="step">
+                <span class="step-num">B</span>
+                <div><b>Normalize entities</b><span>Applications, components, incidents, dependencies, resources, doc chunks.</span></div>
+              </div>
+              <div class="step">
+                <span class="step-num">C</span>
+                <div><b>Embed and link</b><span>Chunk docs, create embeddings, attach provenance and graph relationships.</span></div>
+              </div>
+              <div class="step">
+                <span class="step-num">D</span>
+                <div><b>Upsert safely</b><span>Idempotent writes with uniqueness constraints and ingestion run records.</span></div>
+              </div>
+            </div>
+            <div class="flow-label">Persist</div>
+          </section>
+
+          <section class="lane core">
+            <h3>Knowledge Layer <span>3</span></h3>
+            <div class="neo">
+              <h3>Neo4j Graph + Vector Index</h3>
+              <div class="graph-map" aria-label="Knowledge graph relationships">
+                <div class="graph-hub">
+                  <span>Application node</span>
+                  <strong>APP001</strong>
+                  <small>Central identity used to join operational history, architecture intent, and deployed infrastructure.</small>
+                </div>
+                <div class="relationship-list">
+                  <div class="graph-row row-components">
+                    <span class="edge-label">HAS_COMPONENT</span>
+                    <div><b>Components</b><small>frontend, checkout API, payment worker, batch jobs.</small></div>
+                  </div>
+                  <div class="graph-row row-resources">
+                    <span class="edge-label">RUNS_ON</span>
+                    <div><b>Resources</b><small>clusters, namespaces, deployments, queues, databases, ingress.</small></div>
+                  </div>
+                  <div class="graph-row row-incidents">
+                    <span class="edge-label">HAS_INCIDENT</span>
+                    <div><b>Incidents</b><small>symptoms, priority, timeline, CI, assignment group, resolution notes.</small></div>
+                  </div>
+                  <div class="graph-row row-docs">
+                    <span class="edge-label">HAS_DOC</span>
+                    <div><b>Doc Chunks</b><small>architecture sections and runbook snippets with embeddings.</small></div>
+                  </div>
+                  <div class="graph-row row-dependencies">
+                    <span class="edge-label">DEPENDS_ON</span>
+                    <div><b>Dependencies</b><small>upstream and downstream systems used for blast-radius analysis.</small></div>
+                  </div>
+                </div>
+              </div>
+              <div class="vector-callout">Vector search retrieves relevant architecture and runbook chunks; graph traversal explains how those chunks connect to incidents, resources, and dependencies.</div>
+            </div>
+            <div class="retrieval-strip">
+              <div class="retrieval-card">
+                <b>Graph traversal</b>
+                <span>Blast radius, dependency paths, ownership, app topology.</span>
+              </div>
+              <div class="retrieval-card">
+                <b>Hybrid search</b>
+                <span>Semantic and keyword retrieval over architecture docs and runbooks.</span>
+              </div>
+              <div class="retrieval-card">
+                <b>Structured search</b>
+                <span>Incident filters, timelines, recurrence, and severity grouping.</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="lane runtime">
+            <h3>Chat Runtime <span>4</span></h3>
+            <article class="chat-shell">
+              <div class="chat-top">
+                <b>Chainlit UI</b>
+                <span class="status-pill">APP001 selected</span>
+              </div>
+              <div class="message user-msg">What could be causing checkout latency?</div>
+              <div class="message agent-msg">Likely causes: queue backlog, database pool pressure, or manifest drift. Evidence follows.</div>
+              <div class="evidence">
+                <div>INC-1048: payment callback latency recurring this week.</div>
+                <div>Doc: checkout API depends on orders-db-primary.</div>
+                <div>Manifest: worker points to legacy queue name.</div>
+              </div>
+            </article>
+
+            <article class="agent-card">
+              <div class="agent-header">
+                <h3 class="card-title">FastAPI + LangChain Agent</h3>
+                <span class="chip">Tool-first</span>
+              </div>
+              <div class="tool-grid">
+                <div class="tool"><b>get_app_profile</b><span>Resolve selected app, owner, tier, and components.</span></div>
+                <div class="tool"><b>trace_dependencies</b><span>Walk upstream and downstream graph paths.</span></div>
+                <div class="tool"><b>find_incidents</b><span>Search recent related incidents and timelines.</span></div>
+                <div class="tool"><b>search_docs</b><span>Retrieve architecture and runbook evidence.</span></div>
+                <div class="tool"><b>inspect_manifest</b><span>Compare deployed resources and bindings.</span></div>
+                <div class="tool"><b>rank_hypotheses</b><span>Separate facts, hypotheses, confidence, and checks.</span></div>
+              </div>
+            </article>
+          </section>
+
+          <section class="governance" aria-label="Architecture guardrails">
+            <div class="guardrail">
+              <b>Scoped by app ID</b>
+              <span>Every answer anchors to the selected application and reports missing context.</span>
+            </div>
+            <div class="guardrail">
+              <b>Parameterized queries</b>
+              <span>Core demo paths avoid arbitrary generated Cypher for predictable behavior.</span>
+            </div>
+            <div class="guardrail">
+              <b>Source provenance</b>
+              <span>Claims map back to incidents, doc sections, manifests, or graph paths.</span>
+            </div>
+            <div class="guardrail">
+              <b>Reusable backend</b>
+              <span>FastAPI can later serve Chainlit, Slack, Teams, portals, and batch briefings.</span>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="legend" aria-label="Legend">
+        <div class="legend-item"><span class="swatch" style="background: var(--red)"></span><span>Incidents</span></div>
+        <div class="legend-item"><span class="swatch" style="background: var(--blue)"></span><span>Docs</span></div>
+        <div class="legend-item"><span class="swatch" style="background: var(--gold)"></span><span>Manifests</span></div>
+        <div class="legend-item"><span class="swatch" style="background: var(--green)"></span><span>Graph</span></div>
+        <div class="legend-item"><span class="swatch" style="background: var(--violet)"></span><span>Dependencies</span></div>
+        <div class="legend-item"><span class="swatch" style="background: var(--aqua)"></span><span>Agent Tools</span></div>
+      </section>
+
+      <section class="demo-panel">
+        <article class="panel">
+          <h2 class="panel-title">Showcase Flow</h2>
+          <ol>
+            <li>Show the three raw sources: incident table, architecture Markdown, infrastructure JSON.</li>
+            <li>Run ingestion and show APP001 in the Neo4j knowledge graph.</li>
+            <li>Ask Chainlit for likely causes of an application impact.</li>
+            <li>Show source-backed reasoning across incidents, docs, manifests, and graph paths.</li>
+          </ol>
+        </article>
+        <article class="panel">
+          <h2 class="panel-title">Demo Questions</h2>
+          <div class="questions">
+            <div class="question">What are the most likely causes of APP001 checkout latency?</div>
+            <div class="question">Which dependencies could impact APP001 if the database is degraded?</div>
+            <div class="question">Do the architecture docs and deployed manifest disagree?</div>
+            <div class="question">Create an executive incident briefing with confidence and next checks.</div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
