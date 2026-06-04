@@ -21,7 +21,7 @@ Set your OpenRouter key in `.env` or your shell:
 ```bash
 export OPENROUTER_API_KEY=...
 export KB_AGENT_USE_OPENROUTER=true
-export OPENROUTER_MODEL=openai/gpt-4.1-mini
+export OPENROUTER_MODEL=google/gemini-3.5-flash
 ```
 
 Install dependencies:

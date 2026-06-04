@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     openai_embedding_model: str = Field(default="text-embedding-3-small", alias="OPENAI_EMBEDDING_MODEL")
     use_openai: bool = Field(default=False, alias="KB_AGENT_USE_OPENAI")
     openrouter_api_key: str | None = Field(default=None, alias="OPENROUTER_API_KEY")
-    openrouter_model: str = Field(default="openai/gpt-4.1-mini", alias="OPENROUTER_MODEL")
+    openrouter_model: str = Field(default="google/gemini-3.5-flash", alias="OPENROUTER_MODEL")
     openrouter_base_url: str = Field(default="https://openrouter.ai/api/v1", alias="OPENROUTER_BASE_URL")
     use_openrouter: bool = Field(default=True, alias="KB_AGENT_USE_OPENROUTER")
 
