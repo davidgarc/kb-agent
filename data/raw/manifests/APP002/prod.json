@@ -1,0 +1,36 @@
+{
+  "app_id": "APP002",
+  "name": "Inventory Fulfillment",
+  "business_owner": "Supply Chain Operations",
+  "technical_owner": "Supply Chain Platform",
+  "tier": "2",
+  "criticality": "medium",
+  "description": "Inventory reservation and stock availability service used by checkout.",
+  "environment": "prod",
+  "cluster": "use1-core-01",
+  "namespace": "inventory-prod",
+  "components": [
+    {
+      "component_id": "APP002-api",
+      "name": "inventory-api",
+      "type": "api",
+      "resources": [
+        {"kind": "deployment", "name": "inventory-api", "region": "us-east-1"},
+        {"kind": "service", "name": "inventory-api", "region": "us-east-1"}
+      ],
+      "env": {"INVENTORY_DB_HOST": "inventory-db-primary", "CACHE_NAME": "stock-cache"}
+    },
+    {
+      "component_id": "APP002-cache",
+      "name": "stock-cache",
+      "type": "cache",
+      "resources": [
+        {"kind": "cache", "name": "stock-cache", "region": "us-east-1"}
+      ]
+    }
+  ],
+  "dependencies": [
+    {"dependency_id": "dep-inventory-db-primary", "name": "inventory-db-primary", "kind": "database", "direction": "downstream"},
+    {"dependency_id": "dep-stock-cache", "name": "stock-cache", "kind": "cache", "direction": "downstream"}
+  ]
+}

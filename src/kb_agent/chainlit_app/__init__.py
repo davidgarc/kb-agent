@@ -1,0 +1,1 @@
+"""Chainlit desktop demo UI."""

@@ -1,0 +1,54 @@
+{
+  "app_id": "APP001",
+  "name": "Customer Checkout",
+  "business_owner": "Revenue Operations",
+  "technical_owner": "Payments Platform",
+  "tier": "1",
+  "criticality": "high",
+  "description": "Checkout session, payment authorization, and payment callback processing.",
+  "environment": "prod",
+  "cluster": "use1-core-01",
+  "namespace": "payments-prod",
+  "components": [
+    {
+      "component_id": "APP001-frontend",
+      "name": "checkout-frontend",
+      "type": "frontend",
+      "resources": [
+        {"kind": "deployment", "name": "checkout-frontend", "region": "us-east-1"}
+      ]
+    },
+    {
+      "component_id": "APP001-api",
+      "name": "checkout-api",
+      "type": "api",
+      "resources": [
+        {"kind": "deployment", "name": "checkout-api", "region": "us-east-1"},
+        {"kind": "ingress", "name": "checkout.example.com", "region": "us-east-1"}
+      ],
+      "env": {
+        "ORDERS_DB_HOST": "orders-db-replica",
+        "INVENTORY_API_URL": "https://inventory-api.payments-prod.svc.cluster.local"
+      }
+    },
+    {
+      "component_id": "APP001-worker",
+      "name": "payment-worker",
+      "type": "worker",
+      "resources": [
+        {"kind": "deployment", "name": "payment-worker", "region": "us-east-1"},
+        {"kind": "queue", "name": "checkout-payment-events-v1", "region": "us-east-1"}
+      ],
+      "env": {
+        "PAYMENT_QUEUE": "checkout-payment-events-v1",
+        "CONSUMER_GROUP": "payment-worker-prod"
+      }
+    }
+  ],
+  "dependencies": [
+    {"dependency_id": "dep-app002-inventory-api", "name": "APP002 inventory-api", "kind": "REST API", "direction": "downstream", "target_app_id": "APP002"},
+    {"dependency_id": "dep-acmepay-gateway", "name": "AcmePay Gateway", "kind": "external SaaS", "direction": "downstream"},
+    {"dependency_id": "dep-orders-db-replica", "name": "orders-db-replica", "kind": "database", "direction": "downstream"},
+    {"dependency_id": "dep-checkout-payment-events-v1", "name": "checkout-payment-events-v1", "kind": "queue", "direction": "downstream"}
+  ]
+}
